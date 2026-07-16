@@ -33,7 +33,6 @@ class CompanyProfile(models.Model):
         company_name = models.CharField(max_length=255)
         company_sector = models.CharField(max_length=100)
         rdb_registration_number = models.CharField(max_length=100, unique=True)
-        company_name = models.CharField(max_length=255)
         company_address = models.TextField()
 
         def __str__(self):
