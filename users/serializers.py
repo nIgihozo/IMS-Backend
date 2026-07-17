@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from .models import User, StudentProfile, CompanyProfile, SupervisorProfile
@@ -9,30 +10,109 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'username', 'role']
 
-# Registration Serializer
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password]
-    )
-    password2 = serializers.CharField(write_only=True, required=True)
-
-    class Meta:
-        model = User
-        fields = ['email', 'username', 'password', 'password2', 'role']
+# Student Registration Serializer
+class StudentRegisterSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True)
+    full_name = serializers.CharField()
+    tvetstudent_id = serializers.CharField()
+    course_area = serializers.CharField()
+    school_name = serializers.CharField()
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Passwords didn't match."})
+        if User.objects.filter(email=attrs['email']).exists():
+            raise serializers.ValidationError({"email": "Email already registered."})
         return attrs
-
+    
     def create(self, validated_data):
         validated_data.pop('password2')
-        user = User.objects.create_user(
-            email=validated_data['email'],
-            username=validated_data['username'],
-            password=validated_data['password'],
-            role=validated_data['role']
-        )
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=validated_data['email'],
+                email=validated_data['email'],
+                password=validated_data['password'],
+                role=User.Roles.STUDENT,
+            )
+            StudentProfile.objects.create(
+                user=user,
+                full_name=validated_data['full_name'],
+                tvetstudent_id=validated_data['tvetstudent_id'],
+                course_area=validated_data['course_area'],
+                school_name=validated_data['school_name'],
+            )
+        return user
+    
+# School Supervisor Registration Serializer
+class SupervisorRegisterSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True)
+    full_name = serializers.CharField()
+    department = serializers.CharField()
+    school_name = serializers.CharField()
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Passwords didn't match."})
+        if User.objects.filter(email=attrs['email']).exists():
+            raise serializers.ValidationError({"email": "Email already registered."})
+        return attrs
+    
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=validated_data['email'],
+                email=validated_data['email'],
+                password=validated_data['password'],
+                role=User.Roles.SUPERVISOR,
+            )
+            SupervisorProfile.objects.create(
+                user=user,
+                full_name=validated_data['full_name'],
+                school_name=validated_data['school_name'],
+                department =validated_data['department'],
+            )
+        return user
+
+# Company Registration Serializer
+class CompanyRegisterSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True)
+    company_representative_name = serializers.CharField()
+    company_name = serializers.CharField()
+    company_sector = serializers.CharField()
+    rdb_registration_number= serializers.CharField()
+    company_address = serializers.CharField()
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Passwords didn't match."})
+        if User.objects.filter(email=attrs['email']).exists():
+            raise serializers.ValidationError({"email": "Email already registered."})
+        return attrs
+    
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=validated_data['email'],
+                email=validated_data['email'],
+                password=validated_data['password'],
+                role=User.Roles.STUDENT,
+            )
+            CompanyProfile.objects.create(
+                user=user,
+                company_representative_name=validated_data['company_representative_name'],
+                company_name=validated_data['company_name'],
+                company_sector=validated_data['company_sector'],
+                rdb_registration_number=validated_data['rdb_registration_number'],
+                company_address=validated_data['company_address'],
+            )
         return user
     
 # Login Serializer
@@ -40,20 +120,3 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
         
-# Student Profile Serializer
-class StudentProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StudentProfile
-        fields = ['user', 'full_name', 'tvetstudent_id', 'course_area', 'school_name']
-
-# Company Profile Serializer
-class CompanyProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CompanyProfile
-        fields = ['user', 'company_representative_name', 'company_name', 'company_sector', 'rdb_registration_number', 'company_address']
-
-# Supervisor Profile Serializer
-class SupervisorProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SupervisorProfile
-        fields = ['user', 'full_name', 'school_name', 'department']
