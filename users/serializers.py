@@ -20,22 +20,25 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email', 'username', 'password', 'password2', 'role']
 
-        # Check if all passwords match
-        def validate(self, attrs):
-            if attrs['password'] != attrs['password2']:
-                raise serializers.ValidationError({"password": "Passwords didn't match, make sure you are entering same correct password twice."})
-            return attrs
-        
-        def create(self, validated_data):
-            validated_data.pop('password2')
-            user = User.objects.create_user(
-                email=validated_data['email'],
-                username=validated_data['username'],
-                password=validated_data['password'],
-                role=validated_data['role']
-            )
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Passwords didn't match."})
+        return attrs
 
-            return user
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            username=validated_data['username'],
+            password=validated_data['password'],
+            role=validated_data['role']
+        )
+        return user
+    
+# Login Serializer
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
         
 # Student Profile Serializer
 class StudentProfileSerializer(serializers.ModelSerializer):

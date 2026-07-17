@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'users',
+    'drf_spectacular',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -53,6 +54,13 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'IMS Backend API',
+    'DESCRIPTION': 'Internship Management System Backend API',
+    'VERSION': '1.0.0',
 }
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
