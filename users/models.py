@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import uuid
+from django.utils import timezone
+from datetime import timedelta
 
 class User(AbstractUser):
     class Roles(models.TextChoices):
@@ -22,6 +25,7 @@ class StudentProfile(models.Model):
         full_name = models.CharField(max_length=255)
         tvetstudent_id = models.CharField(max_length=100, unique=True)
         course_area = models.CharField(max_length=100)
+        level = models.CharField(max_length=50)
         school_name = models.CharField(max_length=255)
 
         def __str__(self):
@@ -30,6 +34,7 @@ class StudentProfile(models.Model):
 class CompanyProfile(models.Model):
         user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='company_profile')
         company_representative_name = models.CharField(max_length=255)
+        representative_role = models.CharField(max_length=150)
         company_name = models.CharField(max_length=255)
         company_sector = models.CharField(max_length=100)
         rdb_registration_number = models.CharField(max_length=100, unique=True)
@@ -46,3 +51,11 @@ class SupervisorProfile(models.Model):
 
         def __str__(self):
             return f"{self.full_name} ({self.school_name})"
+        
+class PasswordResetToken(models.Model):
+      user = models.ForeignKey(User, on_delete=models.CASCADE)
+      token = models.UUIDField(default=uuid.uuid4, unique=True)
+      created_at = models.DateTimeField(auto_now_add=True)
+
+      def is_valid(self):
+            return timezone.now() < self.created_at + timedelta(minutes=15)
